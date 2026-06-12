@@ -1,0 +1,21 @@
+{
+  "name": "YSET GPA Calculator",
+  "short_name": "YSET GPA",
+  "description": "Calculate SGPA and CGPA for Yenepoya School of Engineering & Technology",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
