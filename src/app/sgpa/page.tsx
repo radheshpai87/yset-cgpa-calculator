@@ -12,7 +12,7 @@ import { Subject, SemesterData } from "@/lib/types";
 import { getGradeInfo, calculateSGPA, getGradePoint } from "@/lib/grading";
 import { saveSemesters, loadSemesters } from "@/lib/storage";
 import { exportSGPAPdf } from "@/lib/pdf-export";
-import { branches, findCreditsForSubject } from "@/lib/branch-credits";
+import { branches, findCreditsForSubject, isZeroCreditSubject } from "@/lib/branch-credits";
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 11);
@@ -36,16 +36,20 @@ export default function SGPAPage() {
   // Auto-fill credits when branch changes and subjects already have names
   const handleBranchChange = (branchId: string) => {
     setSelectedBranch(branchId);
-    // Re-fill credits for existing subjects
-    setSubjects((prev) =>
-      prev.map((s) => {
+    // Re-fill credits for existing subjects and remove 0-credit ones
+    setSubjects((prev) => {
+      const updated = prev.map((s) => {
         if (s.name && s.name.length > 2) {
           const credits = findCreditsForSubject(branchId, detectedSemester, s.name);
           if (credits > 0) return { ...s, credits };
+          // If credits is 0 and it's a known 0-credit subject, mark for removal
+          if (isZeroCreditSubject(s.name)) return { ...s, credits: -1 }; // flag
         }
         return s;
-      })
-    );
+      });
+      // Remove flagged 0-credit subjects
+      return updated.filter((s) => s.credits !== -1);
+    });
   };
 
   const validSubjects = subjects.filter((s) => s.credits > 0 && s.marks > 0 && s.marks <= 100);
@@ -106,9 +110,9 @@ export default function SGPAPage() {
       const parsed = parseFromYSETFormat(fullText);
 
       if (parsed.length > 0) {
-        setSubjects(
-          parsed.map((s) => {
-            // Try to auto-fill credits from branch data
+        const mappedSubjects = parsed
+          .filter((s) => !selectedBranch || !isZeroCreditSubject(s.name))
+          .map((s) => {
             let credits = 0;
             if (selectedBranch) {
               credits = findCreditsForSubject(selectedBranch, semNum, s.name);
@@ -119,15 +123,13 @@ export default function SGPAPage() {
               marks: s.marks,
               credits,
             };
-          })
-        );
-        const filledCount = parsed.filter((s) =>
-          selectedBranch ? findCreditsForSubject(selectedBranch, semNum, s.name) > 0 : false
-        ).length;
+          });
+        setSubjects(mappedSubjects);
+        const filledCount = mappedSubjects.filter((s) => s.credits > 0).length;
         if (filledCount > 0) {
-          toast.success(`Found ${parsed.length} subjects — auto-filled ${filledCount} credits from ${branches.find(b => b.id === selectedBranch)?.shortName}`);
+          toast.success(`Found ${mappedSubjects.length} subjects — auto-filled ${filledCount} credits from ${branches.find(b => b.id === selectedBranch)?.shortName}`);
         } else {
-          toast.success(`Found ${parsed.length} subjects — enter credits for each`);
+          toast.success(`Found ${mappedSubjects.length} subjects — enter credits for each`);
         }
       } else {
         toast.error("Could not extract subjects. Try entering manually.");

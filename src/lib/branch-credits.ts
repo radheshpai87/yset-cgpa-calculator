@@ -392,6 +392,35 @@ export const branches: BranchInfo[] = [
 ];
 
 /**
+ * Known 0-credit (MC) subjects that should be excluded from SGPA calculation.
+ */
+const ZERO_CREDIT_SUBJECTS = [
+  "environmental studies",
+  "constitution of india",
+  "essence of indian knowledge tradition",
+];
+
+export function isZeroCreditSubject(name: string): boolean {
+  const normalized = name.toLowerCase().trim();
+  return ZERO_CREDIT_SUBJECTS.some(
+    (zc) => normalized.includes(zc) || zc.includes(normalized) || levenshteinClose(normalized, zc)
+  );
+}
+
+/** Simple check if two strings are close enough (handles typos) */
+function levenshteinClose(a: string, b: string): boolean {
+  if (Math.abs(a.length - b.length) > 3) return false;
+  const shorter = a.length < b.length ? a : b;
+  const longer = a.length < b.length ? b : a;
+  let mismatches = 0;
+  for (let i = 0; i < shorter.length; i++) {
+    if (shorter[i] !== longer[i]) mismatches++;
+    if (mismatches > 3) return false;
+  }
+  return true;
+}
+
+/**
  * Find credits for a subject by fuzzy matching against branch data.
  * Returns the credit value or 0 if not found.
  */
@@ -427,16 +456,31 @@ export function findCreditsForSubject(
     }
   }
 
-  // Partial word match — check if significant words overlap
+  // Partial word match — check if significant words overlap (handles typos)
   const words = normalized.split(/\s+/).filter((w) => w.length >= 3);
   for (const sem of semestersToSearch) {
     if (!sem) continue;
     for (const subject of sem.subjects) {
       const subNorm = subject.name.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
       const subWords = subNorm.split(/\s+/).filter((w) => w.length >= 3);
-      const matchCount = words.filter((w) => subWords.some((sw) => sw.includes(w) || w.includes(sw))).length;
-      // If more than half the words match, it's a hit
-      if (matchCount >= 2 && matchCount >= Math.floor(words.length * 0.5)) {
+      
+      // Check word-level similarity (tolerant of typos)
+      let matchCount = 0;
+      for (const w of words) {
+        for (const sw of subWords) {
+          if (sw.includes(w) || w.includes(sw)) { matchCount++; break; }
+          // Handle typos: if words are similar length and share most chars
+          if (Math.abs(w.length - sw.length) <= 2 && w.length >= 4) {
+            let common = 0;
+            for (let i = 0; i < Math.min(w.length, sw.length); i++) {
+              if (w[i] === sw[i]) common++;
+            }
+            if (common >= Math.min(w.length, sw.length) - 2) { matchCount++; break; }
+          }
+        }
+      }
+      
+      if (matchCount >= 2 && matchCount >= Math.floor(Math.min(words.length, subWords.length) * 0.5)) {
         return subject.credits;
       }
     }
