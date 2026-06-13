@@ -4,7 +4,6 @@ import { Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { gradeTable } from "@/lib/grading";
-import { semesterPresets } from "@/lib/presets";
 
 export default function GradingPage() {
   return (
@@ -12,7 +11,7 @@ export default function GradingPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Grading System</h1>
         <p className="mt-2 text-neutral-500 dark:text-neutral-400">
-          YSET grade point mapping, formulas, and semester structures
+          YSET grade point mapping and formulas
         </p>
       </div>
 
@@ -102,33 +101,6 @@ export default function GradingPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
-
-      {/* Semester Structures */}
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-6">YSET Semester Structures</h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {semesterPresets.map((preset) => (
-            <Card key={preset.semester}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">{preset.name}</CardTitle>
-                  <Badge variant="secondary">{preset.totalCredits} Credits</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {preset.subjects.map((s, i) => (
-                    <div key={i} className="flex items-center justify-between py-1.5 border-b border-neutral-50 dark:border-neutral-800 last:border-0">
-                      <span className="text-sm text-neutral-700 dark:text-neutral-300 pr-3">{s.name}</span>
-                      <span className="text-sm font-semibold text-neutral-500 shrink-0">{s.credits} Cr</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
         </div>
       </div>
     </div>
