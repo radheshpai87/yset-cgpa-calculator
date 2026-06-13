@@ -188,12 +188,15 @@ export default function SGPAPage() {
             </button>
           ))}
         </div>
+        <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+          ⚠️ Auto-fill credits is only available for Kalvium branches
+        </p>
         {selectedBranch && (
           <a
             href={branches.find((b) => b.id === selectedBranch)?.creditSheetUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 mt-3 text-sm text-green-600 dark:text-green-400 hover:underline"
+            className="inline-flex items-center gap-1.5 mt-2 text-sm text-green-600 dark:text-green-400 hover:underline"
           >
             <FileText className="h-4 w-4" />
             View official credit sheet (PDF)
