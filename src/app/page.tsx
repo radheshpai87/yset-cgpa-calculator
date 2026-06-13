@@ -96,32 +96,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SEO Content - visually minimal, indexable by Google */}
-      <section className="py-12 border-t border-neutral-100 dark:border-neutral-800">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <details className="group">
-            <summary className="text-sm font-medium text-neutral-400 dark:text-neutral-500 cursor-pointer hover:text-neutral-600 dark:hover:text-neutral-400 transition-colors">
-              About this calculator
-            </summary>
-            <div className="mt-4 max-w-3xl text-xs text-neutral-400 dark:text-neutral-600 space-y-2 leading-relaxed">
-              <p>
-                Built specifically for students of Yenepoya School of Engineering &amp; Technology (YSET), Mangalore.
-                This calculator uses YSET&apos;s official grading system — O (10), A+ (9), A (8), B+ (7), B (6), C (5), F (0) —
-                to calculate your Semester Grade Point Average (SGPA) and Cumulative Grade Point Average (CGPA).
-              </p>
-              <p>
-                Upload your YSET marksheet PDF to auto-fill subjects and marks. Then enter the credits for each subject
-                to get your SGPA instantly. Save multiple semesters and calculate your CGPA using the weighted credit point method
-                (total credit points ÷ total credits — not an average of SGPAs).
-              </p>
-              <p>
-                Supports all B.Tech branches at Yenepoya Deemed University including Computer Science &amp; Engineering (CSE),
-                Electronics, Mechanical, and Civil Engineering.
-              </p>
-            </div>
-          </details>
-        </div>
-      </section>
     </div>
   );
 }
