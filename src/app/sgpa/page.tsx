@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Plus, Trash2, Download, Copy, Save, Check, Upload } from "lucide-react";
+import { Plus, Trash2, Download, Copy, Save, Check, Upload, FileText, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { Subject, SemesterData } from "@/lib/types";
 import { getGradeInfo, calculateSGPA, getGradePoint } from "@/lib/grading";
 import { saveSemesters, loadSemesters } from "@/lib/storage";
 import { exportSGPAPdf } from "@/lib/pdf-export";
+import { branches, findCreditsForSubject } from "@/lib/branch-credits";
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 11);
@@ -28,6 +29,8 @@ export default function SGPAPage() {
   const [subjects, setSubjects] = useState<Subject[]>([emptySubject(), emptySubject(), emptySubject()]);
   const [semesterName, setSemesterName] = useState("Semester 1");
   const [copied, setCopied] = useState(false);
+  const [selectedBranch, setSelectedBranch] = useState("");
+  const [detectedSemester, setDetectedSemester] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validSubjects = subjects.filter((s) => s.credits > 0 && s.marks > 0 && s.marks <= 100);
@@ -73,27 +76,41 @@ export default function SGPAPage() {
 
       // Try to extract semester name
       const semMatch = fullText.match(/(I{1,3}V?|IV|V|VI|VII|VIII)\s*SEM/i);
+      let semNum = 0;
       if (semMatch) {
         const romanToNum: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7, VIII: 8 };
-        const num = romanToNum[semMatch[1].toUpperCase()] || 1;
-        setSemesterName(`Semester ${num}`);
+        semNum = romanToNum[semMatch[1].toUpperCase()] || 1;
+        setSemesterName(`Semester ${semNum}`);
+        setDetectedSemester(semNum);
       }
 
       // Parse subjects from the text
-      // YSET marksheet pattern: Subject names are between column headers and GRAND TOTAL
-      // Each subject has: Name, then scores
       const parsed = parseFromYSETFormat(fullText);
 
       if (parsed.length > 0) {
         setSubjects(
-          parsed.map((s) => ({
-            id: generateId(),
-            name: s.name,
-            marks: s.marks,
-            credits: 0, // User fills this in
-          }))
+          parsed.map((s) => {
+            // Try to auto-fill credits from branch data
+            let credits = 0;
+            if (selectedBranch && semNum > 0) {
+              credits = findCreditsForSubject(selectedBranch, semNum, s.name);
+            }
+            return {
+              id: generateId(),
+              name: s.name,
+              marks: s.marks,
+              credits,
+            };
+          })
         );
-        toast.success(`Found ${parsed.length} subjects — now enter credits for each`);
+        const filledCount = parsed.filter((s) =>
+          selectedBranch && semNum > 0 ? findCreditsForSubject(selectedBranch, semNum, s.name) > 0 : false
+        ).length;
+        if (filledCount > 0) {
+          toast.success(`Found ${parsed.length} subjects — auto-filled ${filledCount} credits from ${branches.find(b => b.id === selectedBranch)?.shortName}`);
+        } else {
+          toast.success(`Found ${parsed.length} subjects — enter credits for each`);
+        }
       } else {
         toast.error("Could not extract subjects. Try entering manually.");
       }
@@ -147,8 +164,42 @@ export default function SGPAPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">SGPA Calculator</h1>
         <p className="mt-2 text-neutral-500 dark:text-neutral-400">
-          Upload your marksheet PDF to auto-fill subjects and marks, then enter credits. Or add subjects manually.
+          Select your branch, upload your marksheet PDF — credits auto-fill. Or add subjects manually.
         </p>
+      </div>
+
+      {/* Branch Selector */}
+      <div className="mb-6">
+        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+          Select your branch
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {branches.map((branch) => (
+            <button
+              key={branch.id}
+              onClick={() => setSelectedBranch(branch.id)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                selectedBranch === branch.id
+                  ? "bg-green-600 text-white shadow-md"
+                  : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+              }`}
+            >
+              {branch.shortName}
+            </button>
+          ))}
+        </div>
+        {selectedBranch && (
+          <a
+            href={branches.find((b) => b.id === selectedBranch)?.creditSheetUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 mt-3 text-sm text-green-600 dark:text-green-400 hover:underline"
+          >
+            <FileText className="h-4 w-4" />
+            View official credit sheet (PDF)
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        )}
       </div>
 
       {/* Upload Section */}
@@ -162,7 +213,9 @@ export default function SGPAPage() {
             Upload Marksheet PDF
           </p>
           <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-            Subjects and marks will be extracted automatically. You just need to add credits.
+            {selectedBranch
+              ? "Subjects, marks, and credits will be filled automatically"
+              : "Subjects and marks will be extracted — select a branch above for auto-credits"}
           </p>
         </div>
         <input
