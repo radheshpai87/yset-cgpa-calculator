@@ -58,11 +58,13 @@ export const metadata: Metadata = {
     title: "YSET GPA Calculator — SGPA & CGPA Calculator",
     description:
       "Free SGPA and CGPA calculator for YSET students. Upload marksheet, enter credits, get results instantly.",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "YSET GPA Calculator",
     description: "Calculate SGPA and CGPA for Yenepoya School of Engineering & Technology",
+    images: ["/opengraph-image"],
   },
   metadataBase: new URL("https://yset-gpa.vercel.app"),
   verification: {
