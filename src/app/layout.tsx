@@ -118,7 +118,7 @@ export default function RootLayout({
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
-          <Toaster richColors position="top-center" />
+          <Toaster richColors position="bottom-right" />
           <Analytics />
         </ThemeProvider>
       </body>
