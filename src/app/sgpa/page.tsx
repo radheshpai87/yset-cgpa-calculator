@@ -33,6 +33,21 @@ export default function SGPAPage() {
   const [detectedSemester, setDetectedSemester] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-fill credits when branch changes and subjects already have names
+  const handleBranchChange = (branchId: string) => {
+    setSelectedBranch(branchId);
+    // Re-fill credits for existing subjects
+    setSubjects((prev) =>
+      prev.map((s) => {
+        if (s.name && s.name.length > 2) {
+          const credits = findCreditsForSubject(branchId, detectedSemester, s.name);
+          if (credits > 0) return { ...s, credits };
+        }
+        return s;
+      })
+    );
+  };
+
   const validSubjects = subjects.filter((s) => s.credits > 0 && s.marks > 0 && s.marks <= 100);
   const sgpa = calculateSGPA(validSubjects);
   const totalCredits = validSubjects.reduce((sum, s) => sum + s.credits, 0);
@@ -180,7 +195,7 @@ export default function SGPAPage() {
           {branches.map((branch) => (
             <button
               key={branch.id}
-              onClick={() => setSelectedBranch(branch.id)}
+              onClick={() => handleBranchChange(branch.id)}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                 selectedBranch === branch.id
                   ? "bg-green-600 text-white shadow-md"
