@@ -74,12 +74,15 @@ export default function SGPAPage() {
         fullText += pageText + "\n";
       }
 
-      // Try to extract semester name
-      const semMatch = fullText.match(/(I{1,3}V?|IV|V|VI|VII|VIII)\s*SEM/i);
+      // Try to extract semester number
+      const semMatch = fullText.match(/(I{1,3}V?|IV|V|VI|VII|VIII)\s*SEM/i) 
+        || fullText.match(/(\d)\s*(?:st|nd|rd|th)?\s*sem/i)
+        || fullText.match(/semester\s*(\d)/i);
       let semNum = 0;
       if (semMatch) {
         const romanToNum: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7, VIII: 8 };
-        semNum = romanToNum[semMatch[1].toUpperCase()] || 1;
+        const val = semMatch[1].toUpperCase();
+        semNum = romanToNum[val] || parseInt(val) || 1;
         setSemesterName(`Semester ${semNum}`);
         setDetectedSemester(semNum);
       }
@@ -92,7 +95,7 @@ export default function SGPAPage() {
           parsed.map((s) => {
             // Try to auto-fill credits from branch data
             let credits = 0;
-            if (selectedBranch && semNum > 0) {
+            if (selectedBranch) {
               credits = findCreditsForSubject(selectedBranch, semNum, s.name);
             }
             return {
@@ -104,7 +107,7 @@ export default function SGPAPage() {
           })
         );
         const filledCount = parsed.filter((s) =>
-          selectedBranch && semNum > 0 ? findCreditsForSubject(selectedBranch, semNum, s.name) > 0 : false
+          selectedBranch ? findCreditsForSubject(selectedBranch, semNum, s.name) > 0 : false
         ).length;
         if (filledCount > 0) {
           toast.success(`Found ${parsed.length} subjects — auto-filled ${filledCount} credits from ${branches.find(b => b.id === selectedBranch)?.shortName}`);

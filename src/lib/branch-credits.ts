@@ -403,24 +403,43 @@ export function findCreditsForSubject(
   const branch = branches.find((b) => b.id === branchId);
   if (!branch) return 0;
 
-  const sem = branch.semesters.find((s) => s.semester === semester);
-  if (!sem) return 0;
+  // Try the specific semester first, then search all semesters
+  const semestersToSearch = semester > 0
+    ? [branch.semesters.find((s) => s.semester === semester), ...branch.semesters.filter((s) => s.semester !== semester)]
+    : branch.semesters;
 
-  const normalized = subjectName.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const normalized = subjectName.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+  const normalizedNoSpace = normalized.replace(/\s+/g, "");
 
-  for (const subject of sem.subjects) {
-    const subNorm = subject.name.toLowerCase().replace(/[^a-z0-9]/g, "");
-    if (subNorm === normalized || subNorm.includes(normalized) || normalized.includes(subNorm)) {
-      return subject.credits;
+  for (const sem of semestersToSearch) {
+    if (!sem) continue;
+    for (const subject of sem.subjects) {
+      const subNorm = subject.name.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+      const subNormNoSpace = subNorm.replace(/\s+/g, "");
+
+      // Exact match (ignoring punctuation)
+      if (subNormNoSpace === normalizedNoSpace) return subject.credits;
+
+      // One contains the other
+      if (subNormNoSpace.includes(normalizedNoSpace) || normalizedNoSpace.includes(subNormNoSpace)) {
+        return subject.credits;
+      }
     }
   }
 
-  // Partial match — check if significant words overlap
-  const words = normalized.match(/[a-z]{4,}/g) || [];
-  for (const subject of sem.subjects) {
-    const subNorm = subject.name.toLowerCase().replace(/[^a-z0-9]/g, "");
-    const matchCount = words.filter((w) => subNorm.includes(w)).length;
-    if (matchCount >= 2) return subject.credits;
+  // Partial word match — check if significant words overlap
+  const words = normalized.split(/\s+/).filter((w) => w.length >= 3);
+  for (const sem of semestersToSearch) {
+    if (!sem) continue;
+    for (const subject of sem.subjects) {
+      const subNorm = subject.name.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+      const subWords = subNorm.split(/\s+/).filter((w) => w.length >= 3);
+      const matchCount = words.filter((w) => subWords.some((sw) => sw.includes(w) || w.includes(sw))).length;
+      // If more than half the words match, it's a hit
+      if (matchCount >= 2 && matchCount >= Math.floor(words.length * 0.5)) {
+        return subject.credits;
+      }
+    }
   }
 
   return 0;
