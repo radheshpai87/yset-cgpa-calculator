@@ -34,9 +34,11 @@ export default function CGPAPage() {
   const [targetCGPA, setTargetCGPA] = useState(9);
   const [nextSemCredits, setNextSemCredits] = useState(0);
   const [selectedBranch, setSelectedBranch] = useState("");
+  const [loaded, setLoaded] = useState(false);
 
-  // Auto-load saved semesters from localStorage on mount
+  // Auto-load saved semesters from localStorage on mount (once)
   useEffect(() => {
+    if (loaded) return;
     const saved = loadSemesters();
     if (saved.length > 0) {
       setSemesters(
@@ -49,7 +51,8 @@ export default function CGPAPage() {
         }))
       );
     }
-  }, []);
+    setLoaded(true);
+  }, [loaded]);
 
   // Auto-calculate next semester credits when branch or semester count changes
   const validSemCount = semesters.filter((s) => s.credits > 0).length;
@@ -73,8 +76,11 @@ export default function CGPAPage() {
   const addSemester = () => setSemesters([...semesters, emptySemester(semesters.length)]);
 
   const removeSemester = (id: string) => {
-    if (semesters.length === 1) return;
-    setSemesters(semesters.filter((s) => s.id !== id));
+    if (semesters.length <= 1) {
+      setSemesters([emptySemester(0)]);
+    } else {
+      setSemesters(semesters.filter((s) => s.id !== id));
+    }
   };
 
   const updateSemester = (id: string, field: keyof CGPASemester, value: string | number) => {
