@@ -11,6 +11,7 @@ import { CGPASemester } from "@/lib/types";
 import { calculateCGPA } from "@/lib/grading";
 import { loadSemesters } from "@/lib/storage";
 import { exportCGPAPdf } from "@/lib/pdf-export";
+import { branches } from "@/lib/branch-credits";
 import dynamic from "next/dynamic";
 
 const RechartsCharts = dynamic(() => import("@/components/cgpa-charts"), { ssr: false });
@@ -32,6 +33,7 @@ export default function CGPAPage() {
   const [copied, setCopied] = useState(false);
   const [targetCGPA, setTargetCGPA] = useState(9);
   const [nextSemCredits, setNextSemCredits] = useState(0);
+  const [selectedBranch, setSelectedBranch] = useState("");
 
   // Auto-load saved semesters from localStorage on mount
   useEffect(() => {
@@ -48,6 +50,20 @@ export default function CGPAPage() {
       );
     }
   }, []);
+
+  // Auto-calculate next semester credits when branch or semester count changes
+  const validSemCount = semesters.filter((s) => s.credits > 0).length;
+  useEffect(() => {
+    if (!selectedBranch) return;
+    const branch = branches.find((b) => b.id === selectedBranch);
+    if (!branch) return;
+    const nextSem = validSemCount + 1;
+    const semData = branch.semesters.find((s) => s.semester === nextSem);
+    if (semData) {
+      const total = semData.subjects.reduce((sum, s) => sum + s.credits, 0);
+      setNextSemCredits(total);
+    }
+  }, [selectedBranch, validSemCount]);
 
   const validSemesters = semesters.filter((s) => s.credits > 0);
   const cgpa = calculateCGPA(validSemesters);
@@ -252,6 +268,24 @@ export default function CGPAPage() {
                 <p className="text-xs text-neutral-500 mb-4">What SGPA do you need next semester?</p>
 
                 <div className="space-y-3 mb-4">
+                  <div>
+                    <label className="text-xs text-neutral-500 mb-1.5 block">Branch (auto-fills credits):</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {branches.map((branch) => (
+                        <button
+                          key={branch.id}
+                          onClick={() => setSelectedBranch(branch.id)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                            selectedBranch === branch.id
+                              ? "bg-green-600 text-white"
+                              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+                          }`}
+                        >
+                          {branch.shortName}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="flex items-center gap-3">
                     <label className="text-sm text-neutral-600 dark:text-neutral-400 w-32">Target CGPA:</label>
                     <Input
