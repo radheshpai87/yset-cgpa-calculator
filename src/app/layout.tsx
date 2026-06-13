@@ -65,6 +65,9 @@ export const metadata: Metadata = {
     description: "Calculate SGPA and CGPA for Yenepoya School of Engineering & Technology",
   },
   metadataBase: new URL("https://yset-gpa.vercel.app"),
+  verification: {
+    google: "WWvBKuiRI7HKlC0kRQuwcPk5GQ5NvmHkTUeA9mZE9Hs",
+  },
 };
 
 export default function RootLayout({
