@@ -468,6 +468,11 @@ export function findCreditsForSubject(
       if (subNormNoSpace.includes(normalizedNoSpace) || normalizedNoSpace.includes(subNormNoSpace)) {
         return subject.credits;
       }
+
+      // Close enough (room for typos)
+      if (levenshteinClose(normalizedNoSpace, subNormNoSpace)) {
+        return subject.credits;
+      }
     }
   }
 
