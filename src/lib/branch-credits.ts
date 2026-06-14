@@ -408,16 +408,31 @@ export function isZeroCreditSubject(name: string): boolean {
 }
 
 /** Simple check if two strings are close enough (handles typos) */
-function levenshteinClose(a: string, b: string): boolean {
-  if (Math.abs(a.length - b.length) > 3) return false;
-  const shorter = a.length < b.length ? a : b;
-  const longer = a.length < b.length ? b : a;
-  let mismatches = 0;
-  for (let i = 0; i < shorter.length; i++) {
-    if (shorter[i] !== longer[i]) mismatches++;
-    if (mismatches > 3) return false;
+function levenshteinClose(
+  a: string,
+  b: string,
+  tolerance: number = 3,
+): boolean {
+  const m = a.length;
+  const n = b.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () =>
+    new Array(n + 1).fill(0),
+  );
+
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const deletion = dp[i - 1][j] + 1;
+      const insertion = dp[i][j - 1] + 1;
+      const substitution = dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1);
+
+      dp[i][j] = Math.min(deletion, insertion, substitution);
+    }
   }
-  return true;
+
+  return dp[m][n] <= tolerance;
 }
 
 /**
@@ -451,6 +466,11 @@ export function findCreditsForSubject(
 
       // One contains the other
       if (subNormNoSpace.includes(normalizedNoSpace) || normalizedNoSpace.includes(subNormNoSpace)) {
+        return subject.credits;
+      }
+
+      // Close enough (room for typos)
+      if (levenshteinClose(normalizedNoSpace, subNormNoSpace)) {
         return subject.credits;
       }
     }
