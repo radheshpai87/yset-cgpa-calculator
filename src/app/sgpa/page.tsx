@@ -158,8 +158,17 @@ export default function SGPAPage() {
       createdAt: new Date().toISOString(),
     };
     const existing = loadSemesters();
-    saveSemesters([...existing, semesterData]);
-    toast.success(`${semesterName} saved! Use it in CGPA calculator.`);
+    const existingIndex = existing.findIndex(
+      (s) => s.name.trim().toLowerCase() === semesterName.trim().toLowerCase()
+    );
+    if (existingIndex >= 0) {
+      existing[existingIndex] = semesterData;
+      saveSemesters(existing);
+      toast.success(`${semesterName} updated! Use it in CGPA calculator.`);
+    } else {
+      saveSemesters([...existing, semesterData]);
+      toast.success(`${semesterName} saved! Use it in CGPA calculator.`);
+    }
   };
 
   const copySGPA = () => {
