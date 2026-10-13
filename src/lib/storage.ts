@@ -6,7 +6,11 @@ const VERSION = "1.0.0";
 export function saveSemesters(semesters: SemesterData[]): void {
   if (typeof window === "undefined") return;
   const data: StoredData = { semesters, version: VERSION };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.error("Failed to save semesters:", error);
+  }
 }
 
 export function loadSemesters(): SemesterData[] {
@@ -21,16 +25,27 @@ export function loadSemesters(): SemesterData[] {
   }
 }
 
+function isValidSemester(s: unknown): s is SemesterData {
+  if (!s || typeof s !== "object") return false;
+  const sem = s as Partial<SemesterData>;
+  return (
+    typeof sem.name === "string" &&
+    Number.isFinite(sem.sgpa) &&
+    Number.isFinite(sem.totalCredits) &&
+    Number.isFinite(sem.totalCreditPoints)
+  );
+}
+
 export function exportData(): string {
-  if (typeof window === "undefined") return "{}";
-  const raw = localStorage.getItem(STORAGE_KEY);
-  return raw || "{}";
+  const empty: StoredData = { semesters: [], version: VERSION };
+  if (typeof window === "undefined") return JSON.stringify(empty);
+  return localStorage.getItem(STORAGE_KEY) || JSON.stringify(empty);
 }
 
 export function importData(jsonString: string): SemesterData[] | null {
   try {
     const data: StoredData = JSON.parse(jsonString);
-    if (data.semesters && Array.isArray(data.semesters)) {
+    if (data && Array.isArray(data.semesters) && data.semesters.every(isValidSemester)) {
       saveSemesters(data.semesters);
       return data.semesters;
     }

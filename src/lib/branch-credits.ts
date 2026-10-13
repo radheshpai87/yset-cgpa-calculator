@@ -402,8 +402,9 @@ const ZERO_CREDIT_SUBJECTS = [
 
 export function isZeroCreditSubject(name: string): boolean {
   const normalized = name.toLowerCase().trim();
+  if (normalized.length < 4) return false;
   return ZERO_CREDIT_SUBJECTS.some(
-    (zc) => normalized.includes(zc) || zc.includes(normalized) || levenshteinClose(normalized, zc)
+    (zc) => normalized.includes(zc) || levenshteinClose(normalized, zc)
   );
 }
 
@@ -454,7 +455,18 @@ export function findCreditsForSubject(
 
   const normalized = subjectName.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
   const normalizedNoSpace = normalized.replace(/\s+/g, "");
+  if (!normalizedNoSpace) return 0;
 
+  // Pass 1: exact match everywhere, so "Mathematics - I" never matches "... - II"
+  for (const sem of semestersToSearch) {
+    if (!sem) continue;
+    for (const subject of sem.subjects) {
+      const subNoSpace = subject.name.toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, "");
+      if (subNoSpace === normalizedNoSpace) return subject.credits;
+    }
+  }
+
+  // Pass 2: partial / typo-tolerant match
   for (const sem of semestersToSearch) {
     if (!sem) continue;
     for (const subject of sem.subjects) {

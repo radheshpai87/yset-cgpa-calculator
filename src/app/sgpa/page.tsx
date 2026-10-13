@@ -72,8 +72,9 @@ export default function SGPAPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== "application/pdf") {
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
       toast.error("Please upload a PDF file");
+      e.target.value = "";
       return;
     }
 
@@ -94,9 +95,10 @@ export default function SGPAPage() {
       }
 
       // Try to extract semester number
-      const semMatch = fullText.match(/(I{1,3}V?|IV|V|VI|VII|VIII)\s*SEM/i) 
-        || fullText.match(/(\d)\s*(?:st|nd|rd|th)?\s*sem/i)
-        || fullText.match(/semester\s*(\d)/i);
+      const semMatch = fullText.match(/\b(VIII|VII|VI|IV|V|III|II|I)\s*SEM/i)
+        || fullText.match(/\bsem(?:ester)?\s*(VIII|VII|VI|IV|V|III|II|I)\b/i)
+        || fullText.match(/\b(\d)\s*(?:st|nd|rd|th)?\s*sem/i)
+        || fullText.match(/\bsemester\s*(\d)/i);
       let semNum = 0;
       if (semMatch) {
         const romanToNum: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7, VIII: 8 };
@@ -257,6 +259,22 @@ export default function SGPAPage() {
           onChange={handlePdfUpload}
           className="hidden"
           aria-label="Upload marksheet PDF"
+        />
+      </div>
+
+      {/* Semester Name */}
+      <div className="mb-6 max-w-xs">
+        <label
+          htmlFor="semester-name"
+          className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block"
+        >
+          Semester name
+        </label>
+        <Input
+          id="semester-name"
+          value={semesterName}
+          onChange={(e) => setSemesterName(e.target.value)}
+          placeholder="e.g. Semester 2"
         />
       </div>
 

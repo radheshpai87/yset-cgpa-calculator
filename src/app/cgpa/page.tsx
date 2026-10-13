@@ -65,6 +65,8 @@ export default function CGPAPage() {
     if (semData) {
       const total = semData.subjects.reduce((sum, s) => sum + s.credits, 0);
       setNextSemCredits(total);
+    } else {
+      setNextSemCredits(0);
     }
   }, [selectedBranch, validSemCount]);
 
